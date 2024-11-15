@@ -4,6 +4,7 @@ output: github_document
 ---
 ```{r, include = FALSE}
 library(tidyverse)
+library(tidyr)
 ```
 
 ## Problem 1
@@ -50,3 +51,53 @@ sim_plot
 
 The graph shows an S curve, which indicates that as group size increases past n = 50, the curve would reach a plateau. This makes sense since probability ranges from 0 to 1.
 As the group size increases, the probability that at least 2 people will share a birthday increases towards 1.00. Around a group size of 23, the probability is 50%.
+
+## Problem 2
+
+```{r}
+# set design elements: n=30, alpha = 5, mu = 0
+
+sample_size = 30
+sigma_std = 5
+
+mu = 0
+alpha = 0.05
+
+#function
+Q2_function = function(n, mean, sd) {
+  
+  dataset = rnorm(n, mean, sd)
+  
+  ttest = broom::tidy(t.test(dataset, mu = 0)) 
+  
+  return(data.frame(
+    sample_mean = mean(dataset),
+    p_value = ttest$p.value
+  ))
+}
+
+#5000 sims and save results
+
+# generate 5000 datasets from model x~Normal[mu, sigma]
+
+#save mu_hat and p-value for each dataset
+
+#Use broom::tidy to clean output of t.test()
+#repeat for mu = {1,2,3,4,5,6}
+```
+
+```{r plot1}
+#make plot: y = proportion of times null was rejected (power); x = true value of mu
+```
+
+The association between effect size and power as shown in the graph above suggests that....
+
+```{r plot2}
+#make plot A: y = average estimate of mu_hat; x = true value of mu
+#plot B: y=average estimate of mu_hat only in samples for which null was rejected; x = true value of mu 
+```
+
+Q: Is the sample average of mu hat across tests for which the null is rejected approximlately equal to true value of mu? Why or why not?
+
+## Problem 3
+
