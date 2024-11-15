@@ -1,0 +1,52 @@
+---
+title: "Homework 5 "
+output: github_document
+---
+```{r, include = FALSE}
+library(tidyverse)
+```
+
+## Problem 1
+
+```{r bday function}
+#given: no leap years (only 365 days in a yr), bdays are uniformly distributed over the year. 
+
+#sample size of n
+bday_dups = function(n) {
+  
+  bday = sample(1:365, n, replace = TRUE)  #draws bdays per person for size n
+  dups = any(duplicated(bday)) #checks dups
+  return(dups) #"True" means there are duplicates
+}
+```
+
+```{r sim}
+simulation = 
+  expand_grid(
+    n = 2:50,
+    iter = 1:10000
+  ) |>
+  mutate(
+    estimate = map_lgl(n, bday_dups)) |>
+       group_by(n) |> 
+    summarize(p = mean(estimate)) #averaging across the sim runs
+```
+
+```{r sim plot}
+sim_plot = simulation |> 
+  ggplot(aes(x = n, y = p)) + 
+  geom_point() + 
+  geom_line() +
+  labs(
+    title = "Probability of Same Birthdays Across Group Size",
+    x = "Group Size (n)", 
+    y = "Probability") +
+   scale_x_continuous(
+      limits = c(0, 50),
+    breaks = seq(0,50, by = 5))
+
+sim_plot
+```
+
+The graph shows an S curve, which indicates that as group size increases past n = 50, the curve would reach a plateau. This makes sense since probability ranges from 0 to 1.
+As the group size increases, the probability that at least 2 people will share a birthday increases towards 1.00. Around a group size of 23, the probability is 50%.
