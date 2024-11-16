@@ -1,6 +1,7 @@
 ---
 title: "Homework 5 "
 output: github_document
+author: Serena T.
 ---
 ```{r, include = FALSE}
 library(tidyverse)
@@ -167,7 +168,7 @@ homicide_data = homicide |>
 #wisconsin = WI
 ```
 
-**Homicide: Total vs. Unsolved**
+**Table 1: Total vs. Unsolved Homicides**
 
 ```{r summary}
 
@@ -184,7 +185,7 @@ knitr::kable(summary, col.names = c("City, State", "Total Homicides", "Unsolved 
 ```
 The table above compares the total number of homicides to the number of unsolved homicides in each of the 50 locations by city, state. 
 
-**Unsolved Homicides in Baltimore, MD**
+**Table 2: Unsolved Homicides in Baltimore, MD**
 ```{r baltimore}
 #use the prop.test and use broom::tidy 
 #pull the estimated proportion and confidence intervals
@@ -201,19 +202,45 @@ Baltimore_MD = summary |>
 knitr::kable(Baltimore_MD, digits = 2, col.names = c("Estimated Proportion of Unsolved Homicides", "Lower Limit of 95% CI", "Upper Limit of 95% CI")) 
 ```
 
-The table above shows the estimated proportion of Unsolved Homicides in Baltimore, Maryland along with the 95% confidence interval.
+The table above shows the estimated proportion of Unsolved Homicides in Baltimore, Maryland along with the 95% confidence interval. 
 
-```{r}
-#Now run prop.test for each of the cities in your dataset, and extract both the proportion of unsolved homicides and the confidence interval for each. Do this within a “tidy” pipeline, making use of purrr::map, purrr::map2, list columns and unnest as necessary to create a tidy dataframe with estimated proportions and CIs for each city.
+65% of the total homicides in Baltimore, MD are unsolved. We are 95% confident that the true proportion of unsolved homicides in Baltimore, MD is between 63% and 66%.
+
+**Table 3: Unsolved Homicides in All 50 Locations**
+
+```{r all location}
+#Now run prop.test for each of the cities in your dataset
+#extract both the proportion of unsolved homicides 95%CI for each. 
+#Do this within a “tidy” pipeline, making use of purrr::map, purrr::map2, list columns and unnest as necessary to create a tidy dataframe with estimated proportions and CIs for each city.
+
+All_cities = summary |>
+   mutate(
+    test_all = map2(homicide_unsolv, homicide_total, prop.test),
+    result_all = map(test_all, broom::tidy)) |>
+    unnest(result_all) |>
+  janitor::clean_names() |> 
+  select(city_state, estimate,conf_low, conf_high) |>
+  arrange(city_state)
+
+knitr::kable(All_cities, digits = 2, col.names = c("Location (City, State)", "Estimated Proportion of Unsolved Homicides", "Lower Limit of 95% CI", "Upper Limit of 95% CI")) 
 ```
+
+The table above is ordered by city name and shows the estimated proportion of unsolved homicides in all 50 locations listed in the dataset along with the 95% confidence interval.
 
 **Plot**
 
-```{r}
-#Showing estimates and CIs for each city
-#geom_errorbar to add error bars based on the upper and lower limits. 
-#Organize cities according to the proportion of unsolved homicides.
+```{r estimate plot}
+plot = All_cities |>
+  arrange(desc(estimate)) |>
+  ggplot(aes(x = reorder(city_state, estimate), y = estimate)) + #order cities by proportion
+  geom_point() +
+  geom_errorbar(aes(ymin = conf_low, ymax = conf_high)) + #add error bars
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  labs(title = "Unsolved Homicides Across 50 Cities",
+       x = "Location (City, State)",
+       y = "Estimated Proportion of Unsolved Homicides")
 
-
+plot
 ```
 
+The plot above shows the distribution of the estimated proportion of unsolved homicides across 50 different cities. Chicago, IL has the highest proportion with 74% of total homicides being unsolved homicides (95%CI: 0.72, 0.75). On the other hand, Tulsa, AL has the lowest with 0% (95%CI: 0.00,0.95). A majority of the cities had an estimated proportion of unsolved homicides under 50%. 
