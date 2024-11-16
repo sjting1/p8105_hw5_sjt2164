@@ -123,7 +123,7 @@ homicide |> distinct(disposition) #3 categories: closed without arrest, closed b
 ```
 
 **Raw Data**
-The raw data `homicide` has `r nrow(homicide)` observations and `r ncol(homicide)` variables. 
+The raw data `homicide` has `r nrow(homicide)` observations and `r ncol(homicide)` variables.
 
 * Identity variables include 
   * `uid` (`r count(distinct(homicide, uid))`), 
@@ -134,6 +134,12 @@ The raw data `homicide` has `r nrow(homicide)` observations and `r ncol(homicide
 * Date variable includes `reported_date` in the format YYYYMMDD. 2 entries does not follow this format (has an extra number).
 * Location variables include `city` (50), `state`, latitude (`lat`), and longitude (`lon`). 
 * The last variable is `disposition` (`r count(distinct(homicide, disposition))` categories)
+
+**Data Cleaning**
+
+* Fixed two `reported_date` entries that had an extra number
+* Fixed abbreviation for Wisconsin
+* created new `city_state` variable
 
 ```{r fix}
 homicide_data = homicide |>
@@ -161,6 +167,8 @@ homicide_data = homicide |>
 #wisconsin = WI
 ```
 
+**Homicide: Total vs. Unsolved**
+
 ```{r summary}
 
 #summarize within cities to obtain the total number of homicides and the number of unsolved homicides (those for which the disposition is “Closed without arrest” or “Open/No arrest”)
@@ -171,11 +179,29 @@ summary = homicide_data |>
     homicide_total = n(),
     homicide_unsolv = sum(disposition %in% c("Closed without arrest", "Open/No arrest")))
 
+
+knitr::kable(summary, col.names = c("City, State", "Total Homicides", "Unsolved Homicides")) 
+```
+The table above compares the total number of homicides to the number of unsolved homicides in each of the 50 locations by city, state. 
+
+**Unsolved Homicides in Baltimore, MD**
+```{r baltimore}
+#use the prop.test and use broom::tidy 
+#pull the estimated proportion and confidence intervals
+
+Baltimore_MD = summary |>
+  filter(city_state == "Baltimore, MD") |>
+  summarize(
+    test = list(prop.test(homicide_unsolv, homicide_total))) |>
+    mutate(result = map(test, broom::tidy)) |>
+   unnest(result) |>
+  janitor::clean_names() |>
+  select(estimate,conf_low, conf_high)
+
+knitr::kable(Baltimore_MD, digits = 2, col.names = c("Estimated Proportion of Unsolved Homicides", "Lower Limit of 95% CI", "Upper Limit of 95% CI")) 
 ```
 
-```{r}
-#For the city of Baltimore, MD, use the prop.test function to estimate the proportion of homicides that are unsolved; save the output of prop.test as an R object, apply the broom::tidy to this object and pull the estimated proportion and confidence intervals from the resulting tidy dataframe.
-```
+The table above shows the estimated proportion of Unsolved Homicides in Baltimore, Maryland along with the 95% confidence interval.
 
 ```{r}
 #Now run prop.test for each of the cities in your dataset, and extract both the proportion of unsolved homicides and the confidence interval for each. Do this within a “tidy” pipeline, making use of purrr::map, purrr::map2, list columns and unnest as necessary to create a tidy dataframe with estimated proportions and CIs for each city.
